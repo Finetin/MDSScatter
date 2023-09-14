@@ -2,8 +2,8 @@
     // import DataTablesCore from 'datatables.net';
     // import DataTable from 'datatables.net-dt';
     import 'datatables.net-responsive-dt';
-    import { useScores } from '../stores/scores.ts'
-    import { onMounted, watch, computed } from 'vue'
+    import { useScores } from '../stores/scores'
+    import { computed } from 'vue'
 
     import DataTable from 'datatables.net-vue3';
     import DataTablesCore from 'datatables.net';
@@ -16,9 +16,6 @@
     })
 
     DataTable.use(DataTablesCore);
-    onMounted(() => {
-        // console.log(selScores._value);
-    })
 </script>
 
 <template>
