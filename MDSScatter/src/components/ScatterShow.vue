@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { onMounted, computed, watch, ref } from 'vue'
-    import { useScores } from '../stores/scores.ts'
+    import { useScores } from '../stores/scores'
     import * as d3 from "d3"
 
     const scores_data = useScores()
@@ -14,8 +14,10 @@
     const colorGrad = ref(0)
     const clickDotId = ref(0)
 
+    type scoreDataType = {a: number, b: number, c: number, d: number, MDSx: number, MDSy: number, id:number}
+
     // 颜色
-    function getColor(value) {
+    function getColor(value:number) {
         const minValue = scores_data.minTotal
         const maxValue = scores_data.maxTotal
         // 定义色阶颜色
@@ -28,8 +30,8 @@
 
         // 根据最小值和最大值计算归一化的值
         var normalizedValue = (value - minValue) / (maxValue - minValue);
-        if (normalizedValue<0) normalizedValue=0
-        if (normalizedValue>=1) normalizedValue=0.99
+        if (normalizedValue < 0) normalizedValue=0
+        if (normalizedValue >= 1) normalizedValue=0.99
 
         // 根据归一化值计算颜色索引
         var colorIndex = Math.floor(normalizedValue * (colors.length - 1));
@@ -44,7 +46,7 @@
         return "rgb(" + interpolatedColor.join(", ") + ")";
     }
     // 辅助函数：线性插值计算颜色值
-    function interpolateColor(startColor, endColor, interpolationValue) {
+    function interpolateColor(startColor: number[], endColor: number[], interpolationValue:number) {
         var interpolatedColor = [];
         for (var i = 0; i < startColor.length; i++) {
             var startValue = startColor[i];
@@ -69,7 +71,8 @@
     })
 
     // 监听屏幕大小变化
-    function observeContainerSizeChanges(container, callback) {
+    function observeContainerSizeChanges(container: HTMLElement,
+        callback: (width: number, height: number) => void) {
         const resizeObserver = new ResizeObserver(entries => {
             for (const entry of entries) {
                 const { width, height } = entry.contentRect;
@@ -79,29 +82,35 @@
 
         resizeObserver.observe(container);
     }
-    function handleSizeChange(width, height) {
+    function handleSizeChange(width: number, height: number) {
         // 在这里执行相应的操作，比如更新 SVG 元素的宽度
-        document.getElementById("scatter_view").setAttribute("width", width);
-        document.getElementById("scatter_view").setAttribute("height", height);
+        const container: HTMLElement|null = document.getElementById("scatter_view");
+        container?.setAttribute("width", width.toString());
+        document.getElementById("scatter_view")?.setAttribute("width", width.toString());
+        document.getElementById("scatter_view")?.setAttribute("height", height.toString());
         console.log("window size changed");
         if (isMounted.value && isInit.value)
             scatterSet2(scores_data.scores)
     }
     function svg_size_init() {
         const container = document.getElementById("scatter_box1");
-        const width = container.offsetWidth;
-        const height = container.offsetHeight;
+        const width = container?.offsetWidth;
+        const height = container?.offsetHeight;
+        if (width == undefined || height == undefined) {
+            console.log("Error: \"scatter_box1\" element missing!");
+            return;
+        }
         handleSizeChange(width, height);
     }
 
-    function scatterSet2(data) {
+    function scatterSet2(data: scoreDataType[]) {
         // 创建svg容器
         const svg = d3.select("#scatter_view")
         // 清除已有内容
         svg.selectAll("*").remove();
 
-        const width = svg.attr("width");
-        const height = svg.attr("height");
+        const width = Number(svg.attr("width"));
+        const height = Number(svg.attr("height"));
         const marginTop = 20;
         const marginRight = 20;
         const marginBottom = 30;
@@ -149,19 +158,22 @@
 
         // 创建brush
         const brush = d3.brush()
-            .extent([[marginLeft, marginTop], [svg.attr("width") - marginRight, svg.attr("height") - marginBottom]])
+            .extent([[marginLeft, marginTop], [width - marginRight, height - marginBottom]])
             .on("end", brushended);
         // 将brush添加到SVG容器中
         const brushGroup = svg.append("g")
             .attr("class", "brush")
             .call(brush);
 
-        let selectedData = []; // 用于存储选中的数据
+        let selectedData: scoreDataType[] = [] // 用于存储选中的数据
 
-        function brushended(event) {
+        function brushended(event: d3.D3BrushEvent<HTMLElement>) {
             if (!event.selection) return;
-
-            const [[x1, y1], [x2, y2]] = event.selection;
+            console.log(event.selection);
+            
+            const tmp_data = event.selection as (number[])[]
+            const [[x1, y1], [x2, y2]] = tmp_data
+            // const x1 = event.selection[0][0];
 
             const newlySelectedData = data.filter(d => {
                 const cx = x(d.MDSx);
@@ -177,7 +189,7 @@
             scores_data.setSelScores(selectedData);
 
             // 在新区域内添加选中的样式
-            dots.filter(d => newlySelectedData.includes(d))
+            dots.filter((d:scoreDataType) => newlySelectedData.includes(d))
                 .classed("selected", true);
 
             // brushGroup.call(brush.clear);
@@ -190,21 +202,26 @@
             .enter()
             .append("circle")
             .attr("class", "dot")
-            .attr("cx", d => x(d.MDSx))
-            .attr("cy", d => y(d.MDSy))
-            .style("fill", d => getColor(d.a+d.b+d.c+d.d)) // 设置颜色
+            .attr("cx", (d:scoreDataType) => x(d.MDSx))
+            .attr("cy", (d:scoreDataType) => y(d.MDSy))
+            .style("fill", (d:scoreDataType) => getColor(d.a+d.b+d.c+d.d)) // 设置颜色
             .attr("r", 5)
-            .attr("data-index", (_, i) => i) // 添加索引属性
-            .on("click", function () { // 单机事件
-                const index = d3.select(this).attr("data-index")
-                clickDotId.value = index
+            .attr("data-index", (_:scoreDataType, i:number) => i) // 添加索引属性
+            .on("click", (event: PointerEvent) => { // 单机事件
+                const dot = event.target as HTMLElement
+                const index = dot.getAttribute("data-index")
+                clickDotId.value = Number(index)
             });
         // return svg.node();
     }
 
-    function handleColorGrad(event) {
-        const left_bound = document.getElementById('score_color_grad').offsetLeft
-        const width_bound = document.getElementById('score_color_grad').offsetWidth
+    function handleColorGrad(event: MouseEvent) {
+        const left_bound = document.getElementById('score_color_grad')?.offsetLeft
+        const width_bound = document.getElementById('score_color_grad')?.offsetWidth
+        if (left_bound == undefined || width_bound == undefined) {
+            console.log("Error: id \"score_color_grad\" element missing!")
+            return
+        }
         const now_grad = (event.clientX - left_bound)/
             width_bound*(scores_data.maxTotal- scores_data.minTotal)+ scores_data.minTotal
         colorGrad.value = Math.round(now_grad)
@@ -214,7 +231,7 @@
         // 处理 value 的变化
         // 获取点的坐标
         isInit.value = true
-        if (isMounted) {
+        if (isMounted.value) {
             scatterSet2(newValue)
         } else {
             console.log("Scatter Unmounted");
@@ -227,18 +244,29 @@
         
         // 绑定尺寸变化
         const container = document.getElementById("scatter_box1");
+        if (container == undefined) {
+            console.log("Error: id \"scatter_box1\" element missing!");
+            return
+        }
         observeContainerSizeChanges(container, handleSizeChange);
 
         isMounted.value = true
 
         // 查询鼠标位置
-        document.getElementById("scatter_view").addEventListener('mousemove', function (event) {
+        document.getElementById("scatter_view")?.addEventListener('mousemove', function (event) {
+            const container = document.getElementById('scatter_show_view')
+            if (container == undefined) {
+                console.log("Error: id \"scatter_show_view\" element missing!");
+                return 
+            }
             const mouseX = event.clientX - 20 - 
-                document.getElementById('scatter_show_view').offsetLeft
+                container.offsetLeft
             const mouseY = event.clientY - 23
             // console.log("mouse: ", mouseX, mouseY);
-            let mXD = (mouseX - xRange.value[0])/(xRange.value[1]-xRange.value[0])*(xRangeD.value[1]-xRangeD.value[0])+xRangeD.value[0]
-            let mYD = (yRange.value[0] - mouseY) / (yRange.value[0] - yRange.value[1]) * (yRangeD.value[1] - yRangeD.value[0])+ yRangeD.value[0]
+            let mXD = (mouseX - xRange.value[0]) / (xRange.value[1] - xRange.value[0])
+                * (xRangeD.value[1]-xRangeD.value[0])+xRangeD.value[0]
+            let mYD = (yRange.value[0] - mouseY) / (yRange.value[0] - yRange.value[1])
+                * (yRangeD.value[1] - yRangeD.value[0])+ yRangeD.value[0]
             if (mXD < xRangeD.value[0]) {
                 mXD = xRangeD.value[0]
             } else if (mXD > xRangeD.value[1]) {
