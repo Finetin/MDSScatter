@@ -57,9 +57,9 @@
 
     // 判断色阶中划线的长度
     const colorMarkLength = computed(() => {
-        const minLen = scores_data.minTotal.toString().length;
+        let minLen = scores_data.minTotal.toString().length;
         if (minLen == 0) minLen=1
-        const maxLen = scores_data.maxTotal.toString().length;
+        let maxLen = scores_data.maxTotal.toString().length;
         if (maxLen == 0) maxLen=1
         if (minLen + maxLen >= 13) return "" 
 
