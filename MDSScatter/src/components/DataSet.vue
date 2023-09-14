@@ -1,7 +1,7 @@
 <script setup lang="ts">
-    import {onMounted, computed, ref, watch} from 'vue'
-    import { useScores }  from '../stores/scores.ts'
-    import { useSubjs } from '../stores/subjs.ts'
+    import { onMounted, ref } from 'vue'
+    import { useScores }  from '../stores/scores'
+    import { useSubjs } from '../stores/subjs'
     import SubjSet from './SubjSet.vue'
 
     // standard deviation
@@ -10,9 +10,12 @@
     const scores_data = useScores()
 
     const scoresGenerate = () => {
-        const nowLockStatus = subjDatas.lockStatus
         const nowIptData = subjDatas.iptData
-        scores_data.requestScores(nowIptData[0], nowIptData[1],
+        const randType: number[] = []
+        for (let i=0; i < nowIptData[0].length; i++) {
+            randType.push(Number(nowIptData[0][i]))
+        }
+        scores_data.requestScores(randType, nowIptData[1],
             nowIptData[2], nowIptData[3], dataSize.value)
     }
 
