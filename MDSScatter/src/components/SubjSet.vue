@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import {onMounted, computed} from 'vue'
-    import { useSubjs } from '../stores/subjs.ts'
+    import { useSubjs } from '../stores/subjs'
     const props = defineProps({
         subjId: Number
     })
@@ -8,8 +8,7 @@
     onMounted(() => {
         // nowSubjId = props.subjId
     })
-    const nowSubjId = props.subjId
-    const subjLetterId = String.fromCharCode(nowSubjId)
+    const nowSubjId = props.subjId as number
 
     const subjDatas = useSubjs()
     const setLockSt = () => {
@@ -19,9 +18,13 @@
             subjDatas.setAllLocked(nowSubjId)
         }
     }
-    const handleRandTypeChange = (event) => {
-        const newVal = event.target.value
-        subjDatas.setRandType(nowSubjId, newVal)
+    const handleRandTypeChange = (event: Event) => {
+        const container = event.target as HTMLSelectElement
+        const newVal = container.value
+        if (newVal == "0")
+            subjDatas.setRandType(nowSubjId, newVal)
+        else if (newVal == "1")
+            subjDatas.setRandType(nowSubjId, newVal)
     }
     const lockIcon = computed(() => {
         if (subjDatas.lockStatus[nowSubjId])
