@@ -2,8 +2,6 @@
 import DataSet from './components/DataSet.vue'
 import DataTableShow from './components/DataTableShow.vue'
 import ScatterShow from './components/ScatterShow.vue'
-import {ref, computed} from 'vue'
-
 
 </script>
 
