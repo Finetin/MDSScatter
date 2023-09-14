@@ -1,6 +1,6 @@
 # MDSS: Multiple Dimensional Scaling to Scatter
 - 随机生成四维数据，经过MDS降维处理后转化为二维数据，并呈现在二维平面的坐标系中。
-> 运行程序，请下载release中文件
+> 运行程序，请下载release中文件[MDSS v1.0.zip](https://github.com/Finetin/MDSScatter/releases/download/v1.0/MDSS.v1.0.zip)
 > - 对于前端部分，需要进入前端文件夹目录，执行 `npm install` 下载依赖后，执行 `npm run dev` 即可
 > - 对于后端部分，需要进入后端文件夹目录，执行 `python app.py`
 
